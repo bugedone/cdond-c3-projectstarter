@@ -74,16 +74,28 @@ jobs:
       - image: cimg/node:20.5.0
     steps:
       - checkout
-      # Restore from cache
-      # Your job code here
+      - restore_cache:
+          keys: [frontend-build]
+      - run:
+          name: Test front-end
+          command: |
+            cd frontend
+            npm install
+            npm run test
                 
   test-backend:
     docker:
       - image: cimg/node:20.5.0
     steps:
       - checkout
-      # Restore from cache
-      # Your job code here
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: Test back-end
+          command: |
+            cd frontend
+            npm install
+            npm run test
             
   scan-frontend:
     docker:
