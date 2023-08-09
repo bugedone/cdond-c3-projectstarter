@@ -32,7 +32,7 @@ commands:
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
             SUCCESS = 1
-            if(( $SUCCESS==1 )); 
+            if [ $SUCCESS = 1 ]
             then
               cd ~/project/backend
               npm install
@@ -211,7 +211,7 @@ jobs:
       - run:
           name: Send migration results to Kvdb
           command: |
-            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            if grep -q -e "has been executed successfully" -e "No migrations are pending" ~/project/backend/migrations_dump.txt
             then
               curl https://kvdb.io/9Y8zPA3w1h66Tr3pezwpNC/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
@@ -269,13 +269,13 @@ jobs:
             cd backend
             npm i
             npm run build
-            cd ..
-            ## Zip the directory
-            tar -C backend -czvf artifact.tar.gz .
-            cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
+            cd ../.circleci/ansible
+            ## Zip the backend directory
+            tar -C ../../backend -czvf artifact.tar.gz .
+            ls -l
+            echo "Contents of the inventory.txt file is -------"
             cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
+            ansible-playbook -i inventory.txt deploy-backend.yml -vvv
       - destroy-environment
       - revert-migrations
 
