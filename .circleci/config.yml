@@ -238,7 +238,6 @@ jobs:
           command: |
             pwd
             ls -l
-            cat ~/serverip.txt
             export BACKEND_IP=$(cat serverip.txt)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
