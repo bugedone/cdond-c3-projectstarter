@@ -31,8 +31,8 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = 1
-            if [ $SUCCESS = 1 ]
+            SUCCESS=1
+            if [[ "$SUCCESS" == 1 ]]
             then
               cd ~/project/backend
               npm install
@@ -213,7 +213,7 @@ jobs:
           command: |
             if grep -q -e "has been executed successfully" -e "No migrations are pending" ~/project/backend/migrations_dump.txt
             then
-              curl https://kvdb.io/9Y8zPA3w1h66Tr3pezwpNC/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              curl https://kvdb.io/9Y8zPA3w1h66Tr3pezwpNC/migration_${CIRCLE_WORKFLOW_ID:0:7} -k -d '1'
             fi
       - destroy-environment
       - revert-migrations
