@@ -31,7 +31,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS=$(curl https://kvdb.io/9Y8zPA3w1h66Tr3pezwpNC/migration_${CIRCLE_WORKFLOW_ID:0:7})
+            SUCCESS=$(curl -k https://kvdb.io/9Y8zPA3w1h66Tr3pezwpNC/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if [[ "$SUCCESS" == "1" ]]
             then
               cd ~/project/backend
@@ -159,6 +159,7 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=udapeople" \
               --output text > serverip.txt
+            pwd
             cat serverip.txt >> ~/project/.circleci/ansible/inventory.txt
             echo "Contents  of the inventory.txt file is -------"
             cat ~/project/.circleci/ansible/inventory.txt
