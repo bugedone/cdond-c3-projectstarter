@@ -1,5 +1,16 @@
 version: 2.1
 
+executors:
+  aws:
+    docker:
+      - image: amazon/aws-cli
+  ansible:
+    docker:
+      - image: python:3.11-alpine3.17
+  node:
+    docker:
+      - image: circleci/node:13.8.0
+
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -30,8 +41,7 @@ commands:
             
 jobs:
   build-frontend:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
       - restore_cache:
@@ -47,8 +57,7 @@ jobs:
           key: frontend-build
 
   build-backend:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
       - restore_cache:
@@ -64,8 +73,7 @@ jobs:
           key: backend-build
 
   test-frontend:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
       - restore_cache:
@@ -78,8 +86,7 @@ jobs:
             #npm run test
                 
   test-backend:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
       - restore_cache:
@@ -92,8 +99,7 @@ jobs:
             #npm install
             
   scan-frontend:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
       - restore_cache:
@@ -108,8 +114,7 @@ jobs:
             #npm audit --audit-level=critical
 
   scan-backend:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
       - restore_cache:
@@ -124,8 +129,7 @@ jobs:
             #npm audit --audit-level=critical
 
   deploy-infrastructure:
-    docker:
-      - image: amazon/aws-cli
+    executor: aws
     steps:
       - checkout
       - run:
@@ -154,18 +158,19 @@ jobs:
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=udapeople" \
-              --output text >> ~/project/.circleci/ansible/inventory.txt
-            echo "Created inventory file:"
+              --output text > serverip.txt
+            cat serverip.txt >> ~/project/.circleci/ansible/inventory.txt
+            echo "Contents  of the inventory.txt file is -------"
             cat ~/project/.circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+            - serverip.txt
       - destroy-environment
 
   configure-infrastructure:
-    docker:
-      - image: python:3.11-alpine3.17
+    executor: ansible
     steps:
       - checkout
       - add_ssh_keys:
@@ -184,8 +189,7 @@ jobs:
       - destroy-environment
 
   run-migrations:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
       - run:
@@ -215,10 +219,11 @@ jobs:
       - revert-migrations
 
   deploy-frontend:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/
       - run:
           name: Install AWS CLI dependencies
           working_directory: /tmp
@@ -230,7 +235,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:project,Values=udapeople" --output text)
+            export BACKEND_IP=$(cat serverip.txt)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
@@ -247,8 +252,7 @@ jobs:
       - revert-migrations
                     
   deploy-backend:
-    docker:
-      - image: python:3.11-alpine3.17
+    executor: ansible
     steps:
       - checkout
       - add_ssh_keys:
@@ -276,31 +280,46 @@ jobs:
       - revert-migrations
 
   smoke-test:
-    docker:
-      - image: cimg/base
+    executor: ansible
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            apk add --update curl
       - run:
           name: Get backend url
           command: |
-            # your code here
+            export BACKEND_IP=$(cat serverip.txt)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
       - run:
           name: Backend smoke test.
           command: |
-            # your code here
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              return 0
+            else
+              return 1
+            fi
       - run:
           name: Frontend smoke test.
           command: |
-            # your code here
-      # Here's where you will add some code to rollback on failure  
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+            echo ${URL}
+            if curl -s ${URL} | grep "Welcome"
+            then
+              return 1  # change this to make job succeed
+            else
+              return 1
+            fi
+      - destroy-environment
+      - revert-migrations
 
   cloudfront-update:
-    docker:
-      - image: amazon/aws-cli
+    executor: aws
     steps:
       - checkout
       - run:
@@ -358,10 +377,10 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
           filters:
             branches:
               only: [test-feature-branch]
-      - cloudfront-update:
-          requires: [smoke-test]
       - cleanup:
           requires: [cloudfront-update]
