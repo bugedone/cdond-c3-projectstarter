@@ -350,6 +350,10 @@ jobs:
   cleanup:
     executor: aws
     steps:
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y tar gzip
       - attach_workspace:
           at: ~/
       - run:
