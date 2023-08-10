@@ -82,8 +82,8 @@ jobs:
           name: Test front-end
           command: |
             cd frontend
-            #npm install
-            #npm run test
+            npm install
+            npm run test
                 
   test-backend:
     executor: node
@@ -95,8 +95,8 @@ jobs:
           name: Test back-end
           command: |
             cd backend
-            #npm run test
-            #npm install
+            npm run test
+            npm install
             
   scan-frontend:
     executor: node
@@ -108,10 +108,10 @@ jobs:
           name: Scan front-end
           command: |
             cd frontend
-            #npm install
-            #npm audit fix --audit-level=critical --force
-            #npm audit fix --audit-level=critical --force
-            #npm audit --audit-level=critical
+            npm install
+            npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force
+            npm audit --audit-level=critical
 
   scan-backend:
     executor: node
@@ -123,10 +123,10 @@ jobs:
           name: Scan back-end
           command: |
             cd backend
-            #npm install
-            #npm audit fix --audit-level=critical --force
-            #npm audit fix --audit-level=critical --force
-            #npm audit --audit-level=critical
+            npm install
+            npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force
+            npm audit --audit-level=critical
 
   deploy-infrastructure:
     executor: aws
