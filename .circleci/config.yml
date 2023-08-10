@@ -137,6 +137,14 @@ jobs:
           command: |
             yum install -y tar gzip
       - run:
+          name: Get old workflow ID (if it exists)
+          command: |
+            TMP=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+            echo ${TMP#*-} > oldworkflowid.txt
+            echo 'OldWorkflowID is:'
+            cat oldworkflowid.txt
+
+      - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
@@ -168,6 +176,7 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
             - project/serverip.txt
+            - project/oldworkflowid.txt
       - destroy-environment
 
   configure-infrastructure:
@@ -341,19 +350,16 @@ jobs:
   cleanup:
     executor: aws
     steps:
+      - attach_workspace:
+          at: ~/
       - run:
           name: Get old stack workflow id
           command: |
-            TMP=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
-            export OldWorkflowID=${TMP#*-}
-            ThisWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
+            OldWorkflowID=$(cat oldworkflowid.txt)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo ThisWorkflowID: "${ThisWorkflowID}"
 
-            #export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-            #echo Stack names: "${STACKS[@]}"
-
-            if [[ "${ThisWorkflowID}" != "${OldWorkflowID}" ]]
+            if [ "${OldWorkflowID}" != "" ] && [ "${ThisWorkflowID}" != "${OldWorkflowID}" ]
             then
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
