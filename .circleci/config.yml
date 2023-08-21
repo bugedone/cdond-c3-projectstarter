@@ -164,7 +164,7 @@ jobs:
           name: Add back-end ip to ansible inventory
           command: |
             aws ec2 describe-instances \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --query 'Reservations[*].Instances[*].PublicDnsName' \
               --filters "Name=tag:project,Values=udapeople" \
               --output text > serverip.txt
             pwd
@@ -184,7 +184,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["e6:24:c4:69:ba:27:23:01:37:03:3a:c3:a1:0b:45:39"]
+          fingerprints: ["8a:cd:69:8a:b1:17:e1:90:cd:8b:99:67:6f:91:a4:82"]
       - attach_workspace:
           at: ~/
       - run:
@@ -268,7 +268,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["e6:24:c4:69:ba:27:23:01:37:03:3a:c3:a1:0b:45:39"]
+          fingerprints: ["8a:cd:69:8a:b1:17:e1:90:cd:8b:99:67:6f:91:a4:82"]
       - attach_workspace:
           at: ~/
       - run:
@@ -357,7 +357,7 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Get old stack workflow id
+          name: Remove old stacks and files
           command: |
             OldWorkflowID=$(cat oldworkflowid.txt)
             echo OldWorkflowID: "${OldWorkflowID}"
