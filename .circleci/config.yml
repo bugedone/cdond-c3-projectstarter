@@ -216,6 +216,7 @@ jobs:
             cd backend
             npm install
             ## Run and save the migration output
+            echo "DBhost=${TYPEORM_HOST}, port=${TYPEORM_PORT}, dbname=${TYPEORM_DATABASE}, user=${TYPEORM_USERNAME}, pwd=${TYPEORM_PASSWORD}"
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
       - run:
