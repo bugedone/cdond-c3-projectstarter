@@ -166,7 +166,7 @@ jobs:
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicDnsName' \
               --filters "Name=tag:project,Values=udapeople" \
-              --output text > serverip.txt
+              --output text | tail -1 > serverip.txt
             pwd
             cat serverip.txt >> ~/project/.circleci/ansible/inventory.txt
             echo "Contents  of the inventory.txt file is -------"
